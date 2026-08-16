@@ -142,6 +142,13 @@
 .swatch-red     { --c: #e66767; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* The [hidden] attribute must always win, even over elements whose own
+   class sets an explicit `display` (e.g. .modal-backdrop uses display:flex
+   to show itself — without this rule, that flex declaration has equal CSS
+   specificity to the browser's default `[hidden]{display:none}` and, being
+   an author style, wins the tie — so the element stays visible even while
+   marked hidden). !important is intentional and load-bearing here. */
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 html { color-scheme: var(--color-scheme); }
 body {
