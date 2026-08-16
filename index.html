@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Habits</title>
+
+<!-- PWA / iOS home-screen setup -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0d0d0d" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Habits" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="icon" href="icons/icon-32.png" />
+
+<link rel="stylesheet" href="style.css" />
+
+<!-- Apply the saved theme before first paint, so there's no flash of the wrong theme -->
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("habitTheme") || "midnight";
+      document.documentElement.setAttribute("data-app-theme", t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<!-- ───────────────────────── AUTH SCREEN ───────────────────────── -->
+<section id="auth-screen" class="screen">
+  <div class="auth-card">
+    <div class="brand">
+      <img src="icons/icon-120.png" alt="" class="brand-icon" />
+      <h1>Habits</h1>
+      <p class="muted">Track any habit. Free, private, synced across your devices.</p>
+    </div>
+
+    <form id="auth-form" novalidate>
+      <label class="field">
+        <span>Email</span>
+        <input type="email" id="auth-email" autocomplete="email" required />
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" id="auth-password" autocomplete="current-password" required minlength="6" />
+      </label>
+      <p id="auth-error" class="error-text" hidden></p>
+      <button type="submit" id="auth-submit" class="btn btn-primary btn-block">Log in</button>
+    </form>
+
+    <button id="auth-toggle-mode" class="btn-link">Don't have an account? Sign up</button>
+  </div>
+</section>
+
+<!-- ───────────────────────── MAIN APP ───────────────────────── -->
+<div id="app-root" hidden>
+
+  <!-- Today view -->
+  <main id="view-today" class="view">
+    <header class="app-header">
+      <div>
+        <h1 id="greeting">Hello</h1>
+        <p id="today-subline" class="muted"></p>
+      </div>
+    </header>
+
+    <div id="today-list"></div>
+
+    <div id="today-empty" class="empty-state" hidden>
+      <p>No habits yet.</p>
+      <p class="muted">Tap the + button to add your first habit.</p>
+    </div>
+  </main>
+
+  <!-- Stats view -->
+  <main id="view-stats" class="view" hidden>
+    <header class="app-header">
+      <div>
+        <h1>Stats</h1>
+        <p class="muted">Your progress, at a glance</p>
+      </div>
+    </header>
+    <div id="stats-overview"></div>
+    <div id="stats-habit-list" class="habit-list habit-list--compact"></div>
+  </main>
+
+  <!-- Habit detail -->
+  <main id="view-detail" class="view" hidden>
+    <header class="app-header app-header--detail">
+      <button id="detail-back" class="icon-btn" aria-label="Back">←</button>
+      <div class="detail-actions">
+        <button id="detail-edit" class="icon-btn" aria-label="Edit">✎</button>
+        <button id="detail-delete" class="icon-btn icon-btn--danger" aria-label="Delete">🗑</button>
+      </div>
+    </header>
+    <div id="detail-content"></div>
+  </main>
+
+  <!-- Settings -->
+  <main id="view-settings" class="view" hidden>
+    <header class="app-header">
+      <div>
+        <h1>Settings</h1>
+        <p class="muted">Make it yours</p>
+      </div>
+    </header>
+
+    <div class="section-card">
+      <h3>Appearance</h3>
+      <div id="theme-grid" class="theme-grid"></div>
+    </div>
+
+    <div class="section-card">
+      <h3>Account</h3>
+      <p id="settings-email" class="muted" style="margin-bottom:14px;"></p>
+      <button id="logout-btn" class="btn btn-secondary btn-block">Log out</button>
+    </div>
+  </main>
+
+  <!-- Bottom tab bar -->
+  <nav class="tabbar">
+    <button class="tab-btn active" data-tab="today">
+      <span class="tab-icon">✓</span><span>Today</span>
+    </button>
+    <button class="tab-btn" data-tab="stats">
+      <span class="tab-icon">📊</span><span>Stats</span>
+    </button>
+    <button class="tab-btn" data-tab="settings">
+      <span class="tab-icon">⚙</span><span>Settings</span>
+    </button>
+    <button id="fab" class="fab" aria-label="Add habit">+</button>
+  </nav>
+</div>
+
+<!-- ───────────────────────── ADD/EDIT HABIT MODAL ───────────────────────── -->
+<div id="habit-modal" class="modal-backdrop" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="habit-modal-title">New habit</h2>
+      <button id="habit-modal-close" class="icon-btn" aria-label="Close">✕</button>
+    </div>
+    <form id="habit-form">
+      <label class="field">
+        <span>Name</span>
+        <input type="text" id="habit-name" maxlength="40" placeholder="e.g. Drink water" required />
+      </label>
+      <label class="field">
+        <span>Description <span class="muted">(optional)</span></span>
+        <textarea id="habit-description" maxlength="140" placeholder="e.g. 2 litres a day" rows="2"></textarea>
+      </label>
+
+      <div class="field">
+        <span>Color</span>
+        <div id="color-picker" class="color-picker"></div>
+      </div>
+
+      <div class="field">
+        <span>Weekly goal</span>
+        <div class="stepper">
+          <button type="button" id="goal-minus" class="icon-btn">−</button>
+          <span id="goal-value">7</span>
+          <span class="muted">/ week</span>
+          <button type="button" id="goal-plus" class="icon-btn">+</button>
+        </div>
+      </div>
+
+      <label class="switch-row">
+        <span>Track a daily count <span class="muted">(e.g. 3 cups of tea)</span></span>
+        <input type="checkbox" id="count-toggle" />
+        <span class="switch"></span>
+      </label>
+
+      <div id="count-fields" hidden>
+        <div class="field">
+          <span>Daily target</span>
+          <div class="stepper">
+            <button type="button" id="target-minus" class="icon-btn">−</button>
+            <span id="target-value">3</span>
+            <button type="button" id="target-plus" class="icon-btn">+</button>
+          </div>
+        </div>
+        <label class="field">
+          <span>Unit <span class="muted">(optional)</span></span>
+          <input type="text" id="habit-unit" maxlength="16" placeholder="e.g. cups, glasses, pages" />
+        </label>
+      </div>
+
+      <p id="habit-form-error" class="error-text" hidden></p>
+      <button type="submit" class="btn btn-primary btn-block">Save habit</button>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
