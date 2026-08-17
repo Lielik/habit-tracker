@@ -195,6 +195,18 @@ const countToggle = $("#count-toggle");
 const countFields = $("#count-fields");
 const habitFormError = $("#habit-form-error");
 
+const countSheet = $("#count-sheet");
+const countSheetClose = $("#count-sheet-close");
+const countSheetStats = $("#count-sheet-stats");
+const countSheetName = $("#count-sheet-name");
+const countSheetGoal = $("#count-sheet-goal");
+const countSheetValue = $("#count-sheet-value");
+const countRingFill = $("#count-ring-fill");
+const countSheetDec = $("#count-sheet-dec");
+const countSheetInc = $("#count-sheet-inc");
+const countSheetReset = $("#count-sheet-reset");
+const countSheetComplete = $("#count-sheet-complete");
+
 const toastEl = $("#toast");
 
 /* ============================================================
@@ -310,6 +322,7 @@ function subscribeHabits(uid) {
     habits = {};
     snap.forEach((d) => { habits[d.id] = { id: d.id, ...d.data() }; });
     renderActiveView();
+    if (!countSheet.hidden) renderCountSheet();
   }, (err) => {
     console.error("habits snapshot error", err);
     showToast("Sync error — check your connection");
@@ -435,11 +448,9 @@ function controlHTML(h) {
   const full = count >= target;
   const unit = h.unit ? ` ${escapeHtml(h.unit)}` : "";
   return `
-    <div class="count-control">
-      <button type="button" class="icon-btn count-btn" data-action="dec" ${count <= 0 ? "disabled" : ""}>−</button>
-      <span class="count-display${full ? " full" : ""}">${count}<span class="count-target">/${target}${unit}</span></span>
-      <button type="button" class="icon-btn count-btn${full ? " done" : ""}" data-action="inc">+</button>
-    </div>`;
+    <button type="button" class="count-pill${full ? " full" : ""}" data-action="open-count" style="--c:${h.color}">
+      <span class="count-pill-num">${count}</span><span class="count-pill-target">/${target}${unit}</span>
+    </button>`;
 }
 
 function cardHTML(h) {
@@ -495,13 +506,84 @@ todayList.addEventListener("click", (e) => {
   if (action === "toggle") {
     const done = !!h.completions?.[todayStr()];
     toggleCompletion(id, todayStr(), !done).catch(() => showToast("Couldn't save — try again"));
-  } else if (action === "inc" || action === "dec") {
-    const target = h.targetCount || 1;
-    const current = typeof h.completions?.[todayStr()] === "number" ? h.completions[todayStr()] : 0;
-    const next = Math.max(0, Math.min(99, current + (action === "inc" ? 1 : -1)));
-    setCompletionCount(id, todayStr(), next).catch(() => showToast("Couldn't save — try again"));
+  } else if (action === "open-count") {
+    openCountSheet(id);
   } else {
     openDetail(id);
+  }
+});
+
+/* ============================================================
+   Count control sheet — big circular dial for count-based habits,
+   opened by tapping the count pill on a habit's Today card.
+   ============================================================ */
+let countSheetHabitId = null;
+const COUNT_RING_R = 60;
+const COUNT_RING_CIRC = 2 * Math.PI * COUNT_RING_R;
+
+function renderCountSheet() {
+  const h = habits[countSheetHabitId];
+  if (!h) { closeCountSheet(); return; }
+  const target = h.targetCount || 1;
+  const val = h.completions?.[todayStr()];
+  const count = typeof val === "number" ? val : 0;
+  const pct = Math.max(0, Math.min(1, count / target));
+
+  countSheetName.textContent = h.name;
+  countSheetGoal.textContent = `Daily goal: ${target}${h.unit ? " " + h.unit : ""}`;
+  countSheetValue.textContent = count;
+  countSheet.querySelector(".count-sheet").style.setProperty("--c", h.color);
+  countRingFill.style.strokeDashoffset = COUNT_RING_CIRC * (1 - pct);
+  countSheetDec.disabled = count <= 0;
+}
+
+function openCountSheet(id) {
+  countSheetHabitId = id;
+  renderCountSheet();
+  countSheet.hidden = false;
+}
+function closeCountSheet() {
+  countSheet.hidden = true;
+  countSheetHabitId = null;
+}
+countSheetClose.addEventListener("click", closeCountSheet);
+countSheet.addEventListener("click", (e) => { if (e.target === countSheet) closeCountSheet(); });
+countSheetStats.addEventListener("click", () => {
+  const id = countSheetHabitId;
+  closeCountSheet();
+  if (id) openDetail(id);
+});
+
+async function adjustSheetCount(delta) {
+  const h = habits[countSheetHabitId];
+  if (!h) return;
+  const val = h.completions?.[todayStr()];
+  const current = typeof val === "number" ? val : 0;
+  const next = Math.max(0, Math.min(99, current + delta));
+  try {
+    await setCompletionCount(countSheetHabitId, todayStr(), next);
+  } catch {
+    showToast("Couldn't save — try again");
+  }
+}
+countSheetDec.addEventListener("click", () => adjustSheetCount(-1));
+countSheetInc.addEventListener("click", () => adjustSheetCount(1));
+countSheetReset.addEventListener("click", async () => {
+  if (!countSheetHabitId) return;
+  try {
+    await setCompletionCount(countSheetHabitId, todayStr(), 0);
+  } catch {
+    showToast("Couldn't save — try again");
+  }
+});
+countSheetComplete.addEventListener("click", async () => {
+  const h = habits[countSheetHabitId];
+  if (!h) return;
+  try {
+    await setCompletionCount(countSheetHabitId, todayStr(), h.targetCount || 1);
+    showToast("Marked complete");
+  } catch {
+    showToast("Couldn't save — try again");
   }
 });
 

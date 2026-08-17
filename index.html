@@ -201,6 +201,38 @@
   </div>
 </div>
 
+<!-- ───────────────────────── COUNT CONTROL SHEET ───────────────────────── -->
+<div id="count-sheet" class="modal-backdrop" hidden>
+  <div class="modal count-sheet">
+    <div class="sheet-handle"></div>
+    <div class="count-sheet-header">
+      <button id="count-sheet-close" class="icon-btn" aria-label="Close">✕</button>
+      <div class="count-sheet-title">
+        <h2 id="count-sheet-name">Habit</h2>
+        <p id="count-sheet-goal" class="muted">Daily goal</p>
+      </div>
+      <button id="count-sheet-stats" class="icon-btn" aria-label="View stats">📊</button>
+    </div>
+
+    <div class="count-ring-row">
+      <button type="button" id="count-sheet-dec" class="count-ring-btn" aria-label="Decrease">−</button>
+      <div class="count-ring-wrap">
+        <svg viewBox="0 0 140 140" class="count-ring">
+          <circle class="count-ring-track" cx="70" cy="70" r="60"></circle>
+          <circle id="count-ring-fill" class="count-ring-fill" cx="70" cy="70" r="60"></circle>
+        </svg>
+        <div class="count-ring-value" id="count-sheet-value">0</div>
+      </div>
+      <button type="button" id="count-sheet-inc" class="count-ring-btn" aria-label="Increase">+</button>
+    </div>
+
+    <div class="count-sheet-actions">
+      <button type="button" id="count-sheet-reset" class="icon-btn" aria-label="Reset today">↺</button>
+      <button type="button" id="count-sheet-complete" class="btn-complete">✓ Complete all</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast" hidden></div>
 
 <script type="module" src="app.js"></script>
