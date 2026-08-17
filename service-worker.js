@@ -1,5 +1,5 @@
 // Bump this on every deploy so installed clients pick up new files.
-const CACHE_VERSION = "habits-v7";
+const CACHE_VERSION = "habits-v8";
 const APP_SHELL = [
   "./",
   "./index.html",

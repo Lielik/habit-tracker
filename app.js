@@ -923,6 +923,23 @@ function escapeHtml(str) {
    ============================================================ */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch((err) => console.warn("SW registration failed", err));
+    navigator.serviceWorker.register("./service-worker.js").then((reg) => {
+      // iOS home-screen apps don't reliably check for a new version on their
+      // own — force a check whenever the app is brought to the foreground.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") reg.update().catch(() => {});
+      });
+    }).catch((err) => console.warn("SW registration failed", err));
+
+    // Installing a new service worker in the background doesn't change what
+    // this already-loaded page is running. Once the new one takes control,
+    // reload once so you actually land on the new code instead of staying
+    // stuck on the old version until the next cold launch.
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloadedForUpdate) return;
+      reloadedForUpdate = true;
+      window.location.reload();
+    });
   });
 }
