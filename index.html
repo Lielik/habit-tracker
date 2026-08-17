@@ -95,8 +95,12 @@
     <header class="app-header app-header--detail">
       <button id="detail-back" class="icon-btn" aria-label="Back">←</button>
       <div class="detail-actions">
-        <button id="detail-edit" class="icon-btn" aria-label="Edit">✎</button>
-        <button id="detail-delete" class="icon-btn icon-btn--danger" aria-label="Delete">🗑</button>
+        <button id="detail-edit" class="icon-btn" aria-label="Edit">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l.8-3.8L15.6 5.4a1.8 1.8 0 0 1 2.5 0l1.5 1.5a1.8 1.8 0 0 1 0 2.5L8.8 20.2 4 21z"></path><path d="M13.5 6.5l4 4"></path></svg>
+        </button>
+        <button id="detail-delete" class="icon-btn icon-btn--danger" aria-label="Delete">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
       </div>
     </header>
     <div id="detail-content"></div>
@@ -130,13 +134,13 @@
   <!-- Bottom tab bar -->
   <nav class="tabbar">
     <button class="tab-btn active" data-tab="today">
-      <span class="tab-icon">✓</span><span>Today</span>
+      <span class="tab-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 5"></polyline></svg></span><span>Today</span>
     </button>
     <button class="tab-btn" data-tab="stats">
-      <span class="tab-icon">📊</span><span>Stats</span>
+      <span class="tab-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"></line><line x1="12" y1="20" x2="12" y2="6"></line><line x1="19" y1="20" x2="19" y2="15"></line></svg></span><span>Stats</span>
     </button>
     <button class="tab-btn" data-tab="settings">
-      <span class="tab-icon">⚙</span><span>Settings</span>
+      <span class="tab-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 13a7.97 7.97 0 0 0 0-2l2-1.5-2-3.46-2.37 1a8.07 8.07 0 0 0-1.73-1L15 3h-4l-.3 2.54a8.07 8.07 0 0 0-1.73 1l-2.37-1-2 3.46 2 1.5a7.97 7.97 0 0 0 0 2l-2 1.5 2 3.46 2.37-1a8.07 8.07 0 0 0 1.73 1L11 21h4l.3-2.54a8.07 8.07 0 0 0 1.73-1l2.37 1 2-3.46-2-1.5z"></path></svg></span><span>Settings</span>
     </button>
     <button id="fab" class="fab" aria-label="Add habit">+</button>
   </nav>
@@ -147,7 +151,9 @@
   <div class="modal">
     <div class="modal-header">
       <h2 id="habit-modal-title">New habit</h2>
-      <button id="habit-modal-close" class="icon-btn" aria-label="Close">✕</button>
+      <button id="habit-modal-close" class="icon-btn" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg>
+      </button>
     </div>
     <form id="habit-form">
       <label class="field">
@@ -206,12 +212,16 @@
   <div class="modal count-sheet">
     <div class="sheet-handle"></div>
     <div class="count-sheet-header">
-      <button id="count-sheet-close" class="icon-btn" aria-label="Close">✕</button>
+      <button id="count-sheet-close" class="icon-btn" aria-label="Close">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"></line><line x1="19" y1="5" x2="5" y2="19"></line></svg>
+      </button>
       <div class="count-sheet-title">
         <h2 id="count-sheet-name">Habit</h2>
         <p id="count-sheet-goal" class="muted">Daily goal</p>
       </div>
-      <button id="count-sheet-stats" class="icon-btn" aria-label="View stats">📊</button>
+      <button id="count-sheet-stats" class="icon-btn" aria-label="View stats">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"></line><line x1="12" y1="20" x2="12" y2="6"></line><line x1="19" y1="20" x2="19" y2="15"></line></svg>
+      </button>
     </div>
 
     <div class="count-ring-row">
@@ -227,8 +237,13 @@
     </div>
 
     <div class="count-sheet-actions">
-      <button type="button" id="count-sheet-reset" class="icon-btn" aria-label="Reset today">↺</button>
-      <button type="button" id="count-sheet-complete" class="btn-complete">✓ Complete all</button>
+      <button type="button" id="count-sheet-reset" class="icon-btn" aria-label="Reset today">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1.5 4 1.5 10 7.5 10"></polyline><path d="M3.7 15a9 9 0 1 0 2.1-9.4L1.5 10"></path></svg>
+      </button>
+      <button type="button" id="count-sheet-complete" class="btn-complete">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 5"></polyline></svg>
+        Complete all
+      </button>
     </div>
   </div>
 </div>

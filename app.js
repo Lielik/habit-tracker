@@ -45,6 +45,13 @@ const COLORS = [
 ];
 
 /* ============================================================
+   Illustrated icons (inline SVG, currentColor) — used in place of
+   emoji glyphs so icons look the same on every platform/theme.
+   ============================================================ */
+const ICON_CHECK = `<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12.5 9.5 18 20 5"></polyline></svg>`;
+const ICON_SPARKLE = `<svg class="icon icon-sparkle" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l1.7 4.9 4.9 1.7-4.9 1.7L12 15.7l-1.7-4.9-4.9-1.7 4.9-1.7L12 2.5z"></path><path d="M18.7 14l.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8.8-2.3z"></path></svg>`;
+
+/* ============================================================
    Themes
    ============================================================ */
 const THEMES = [
@@ -442,7 +449,7 @@ function controlHTML(h) {
   const target = h.targetCount || 1;
   const val = h.completions?.[todayStr()];
   if (target <= 1) {
-    return `<button class="check-btn${val ? " done" : ""}" data-action="toggle">✓</button>`;
+    return `<button class="check-btn${val ? " done" : ""}" data-action="toggle">${ICON_CHECK}</button>`;
   }
   const count = typeof val === "number" ? val : 0;
   const full = count >= target;
@@ -481,10 +488,10 @@ function renderToday() {
   const todo = [], done = [];
   list.forEach((h) => ((h.completions?.[todayStr()]) ? done : todo).push(h));
 
-  todaySubline.textContent = list.length === 0
+  todaySubline.innerHTML = list.length === 0
     ? ""
     : todo.length === 0
-      ? "All habits done for today 🎉"
+      ? `All habits done for today ${ICON_SPARKLE}`
       : `You have ${todo.length} habit${todo.length === 1 ? "" : "s"} left today`;
 
   todayEmpty.hidden = list.length !== 0;
@@ -664,7 +671,7 @@ function renderDetail() {
 
   detailContent.innerHTML = `
     <div class="detail-hero" style="--c:${h.color}">
-      <div class="dot">✓</div>
+      <div class="dot">${ICON_CHECK}</div>
       <h2>${escapeHtml(h.name)}</h2>
       ${h.description ? `<p class="muted">${escapeHtml(h.description)}</p>` : ""}
       ${h.targetCount > 1 ? `<p class="muted">Goal: ${h.targetCount}${h.unit ? " " + escapeHtml(h.unit) : ""} / day</p>` : ""}

@@ -224,6 +224,14 @@ textarea { resize: vertical; font-family: inherit; }
 }
 .icon-btn--danger { color: var(--critical); }
 
+/* Illustrated icon set (inline SVGs, currentColor) replacing emoji glyphs
+   throughout the app — reads consistently across every platform/theme. */
+.icon { width: 20px; height: 20px; flex-shrink: 0; display: block; }
+.tab-icon .icon { width: 22px; height: 22px; }
+.check-btn .icon, .detail-hero .dot .icon { width: 20px; height: 20px; }
+.btn-complete .icon { width: 18px; height: 18px; }
+.icon-sparkle { width: 15px; height: 15px; display: inline-block; vertical-align: -2px; color: #3987e5; margin-left: 1px; }
+
 /* ============================================================ Tab bar ============================================================ */
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0;
