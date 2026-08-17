@@ -38,6 +38,10 @@
     </div>
 
     <form id="auth-form" novalidate>
+      <label class="field" id="auth-name-field" hidden>
+        <span>Your name <span class="muted">(optional)</span></span>
+        <input type="text" id="auth-name" autocomplete="name" maxlength="40" placeholder="What should we call you?" />
+      </label>
       <label class="field">
         <span>Email</span>
         <input type="email" id="auth-email" autocomplete="email" required />
@@ -114,6 +118,10 @@
 
     <div class="section-card">
       <h3>Account</h3>
+      <label class="field">
+        <span>Your name</span>
+        <input type="text" id="settings-name" maxlength="40" placeholder="What should we call you?" />
+      </label>
       <p id="settings-email" class="muted" style="margin-bottom:14px;"></p>
       <button id="logout-btn" class="btn btn-secondary btn-block">Log out</button>
     </div>

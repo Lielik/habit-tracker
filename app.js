@@ -3,7 +3,8 @@ import { firebaseConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
-  signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence
+  signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence,
+  updateProfile
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentSingleTabManager,
@@ -155,6 +156,8 @@ const $ = (sel) => document.querySelector(sel);
 const authScreen = $("#auth-screen");
 const appRoot = $("#app-root");
 const authForm = $("#auth-form");
+const authNameField = $("#auth-name-field");
+const authNameInput = $("#auth-name");
 const authEmail = $("#auth-email");
 const authPassword = $("#auth-password");
 const authError = $("#auth-error");
@@ -177,6 +180,7 @@ const detailContent = $("#detail-content");
 
 const themeGridEl = $("#theme-grid");
 const settingsEmail = $("#settings-email");
+const settingsNameInput = $("#settings-name");
 
 const habitModal = $("#habit-modal");
 const habitForm = $("#habit-form");
@@ -226,6 +230,7 @@ authToggle.addEventListener("click", () => {
   authMode = authMode === "login" ? "signup" : "login";
   authSubmit.textContent = authMode === "login" ? "Log in" : "Sign up";
   authToggle.textContent = authMode === "login" ? "Don't have an account? Sign up" : "Already have an account? Log in";
+  authNameField.hidden = authMode !== "signup";
   authError.hidden = true;
 });
 
@@ -239,7 +244,11 @@ authForm.addEventListener("submit", async (e) => {
     if (authMode === "login") {
       await signInWithEmailAndPassword(auth, email, password);
     } else {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      const displayName = authNameInput.value.trim();
+      if (displayName) {
+        await updateProfile(cred.user, { displayName }).catch(() => {});
+      }
     }
   } catch (err) {
     authError.textContent = friendlyAuthError(err);
@@ -272,7 +281,7 @@ onAuthStateChanged(auth, (user) => {
 function setGreeting() {
   const h = new Date().getHours();
   const g = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-  const name = (currentUser?.email || "").split("@")[0];
+  const name = currentUser?.displayName?.trim() || (currentUser?.email || "").split("@")[0];
   greeting.textContent = name ? `${g}, ${name}` : g;
 }
 
@@ -687,8 +696,25 @@ themeGridEl.addEventListener("click", (e) => {
 });
 function renderSettings() {
   renderThemeGrid();
-  if (currentUser) settingsEmail.textContent = `Logged in as ${currentUser.email}`;
+  if (currentUser) {
+    settingsEmail.textContent = `Logged in as ${currentUser.email}`;
+    if (document.activeElement !== settingsNameInput) {
+      settingsNameInput.value = currentUser.displayName || "";
+    }
+  }
 }
+settingsNameInput.addEventListener("change", async () => {
+  const name = settingsNameInput.value.trim();
+  if (!currentUser || name === (currentUser.displayName || "")) return;
+  try {
+    await updateProfile(auth.currentUser, { displayName: name });
+    currentUser = auth.currentUser;
+    setGreeting();
+    showToast("Name updated");
+  } catch (e) {
+    showToast("Couldn't save — try again");
+  }
+});
 
 /* ============================================================
    Add / edit habit modal
