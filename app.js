@@ -366,6 +366,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
 function switchTab(tab) {
+  if (currentTab === "settings" && tab !== "settings") flushDisplayNameSave();
   currentTab = tab;
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   viewToday.hidden = tab !== "today";
@@ -703,9 +704,18 @@ function renderSettings() {
     }
   }
 }
-settingsNameInput.addEventListener("change", async () => {
+// Saving on `change` alone isn't reliable on iOS: swiping the keyboard away
+// (instead of tapping elsewhere) hides it without ever blurring the input,
+// so `change`/`blur` never fire and the name silently never saves. Instead
+// we save automatically shortly after typing stops, and also flush
+// immediately on blur and on leaving the Settings tab, so it's covered
+// no matter how the user dismisses the keyboard.
+let nameSaveTimer = null;
+async function flushDisplayNameSave() {
+  clearTimeout(nameSaveTimer);
+  if (!currentUser) return;
   const name = settingsNameInput.value.trim();
-  if (!currentUser || name === (currentUser.displayName || "")) return;
+  if (name === (currentUser.displayName || "")) return;
   try {
     await updateProfile(auth.currentUser, { displayName: name });
     currentUser = auth.currentUser;
@@ -714,7 +724,12 @@ settingsNameInput.addEventListener("change", async () => {
   } catch (e) {
     showToast("Couldn't save — try again");
   }
+}
+settingsNameInput.addEventListener("input", () => {
+  clearTimeout(nameSaveTimer);
+  nameSaveTimer = setTimeout(flushDisplayNameSave, 700);
 });
+settingsNameInput.addEventListener("blur", flushDisplayNameSave);
 
 /* ============================================================
    Add / edit habit modal
