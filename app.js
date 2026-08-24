@@ -945,14 +945,25 @@ settingsNameInput.addEventListener("blur", flushDisplayNameSave);
    Add / edit habit modal
    ============================================================ */
 function renderColorPicker() {
+  const isCustom = !COLORS.includes(modalSelectedColor);
   colorPickerEl.innerHTML = COLORS.map((c) =>
     `<button type="button" class="color-swatch${c === modalSelectedColor ? " selected" : ""}" style="--c:${c}" data-color="${c}"></button>`
-  ).join("");
+  ).join("") + `
+    <label class="color-swatch color-swatch--custom${isCustom ? " selected" : ""}" title="Custom color">
+      <input type="color" id="habit-color-custom" value="${modalSelectedColor}" aria-label="Custom color" />
+    </label>`;
 }
 colorPickerEl.addEventListener("click", (e) => {
-  const btn = e.target.closest(".color-swatch");
+  const btn = e.target.closest(".color-swatch:not(.color-swatch--custom)");
   if (!btn) return;
   modalSelectedColor = btn.dataset.color;
+  renderColorPicker();
+});
+colorPickerEl.addEventListener("change", (e) => {
+  // "change" (not "input") so the picker isn't torn down and rebuilt while
+  // the native color UI is still open/mid-drag — only once a color is committed.
+  if (e.target.id !== "habit-color-custom") return;
+  modalSelectedColor = e.target.value;
   renderColorPicker();
 });
 
