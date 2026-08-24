@@ -113,7 +113,7 @@ choice (this is stored in your own Firebase project — not sent to me or
 anyone else). Use that same email/password on any other device to see the
 same habits, synced automatically.
 
-## Updating the app later
+## Updating the app laterr
 
 If you ever want to add features or tweak the design, I can update the
 files in this same folder — then just commit and push again:
