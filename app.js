@@ -523,10 +523,10 @@ function gridCardHTML(h) {
    columns. Read-only: tapping a row opens that habit's detail.
    ============================================================ */
 function weekTableHTML(list) {
-  const weekStart = startOfWeek(new Date());
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  // Rolling 7 days ending today (today is always the last column), rather
+  // than a calendar-aligned Sunday-start week.
+  const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i - 6));
   const todayDs = todayStr();
-  const now = new Date();
   const rangeLabel = `${fmtDayMonth(days[0])} – ${fmtDayMonth(days[6])}`;
 
   const headerCells = days.map((d) => {
@@ -540,13 +540,11 @@ function weekTableHTML(list) {
     const cells = days.map((d) => {
       const ds = fmtDate(d);
       const val = completions[ds];
-      const future = d > now;
       const cls = [
         isFull(val, target) ? "done" : "",
         isPartial(val, target) ? "done partial" : "",
-        future ? "future" : "",
       ].filter(Boolean).join(" ");
-      return `<div class="week-table-cell${cls ? " " + cls : ""}" style="--c:${h.color}"></div>`;
+      return `<div class="week-table-cell${cls ? " " + cls : ""}" data-id="${h.id}" data-date="${ds}" style="--c:${h.color}"></div>`;
     }).join("");
     return `
       <div class="week-table-row" data-id="${h.id}">
@@ -601,6 +599,22 @@ function renderToday() {
 }
 
 todayList.addEventListener("click", (e) => {
+  const cell = e.target.closest(".week-table-cell");
+  if (cell) {
+    const h = habits[cell.dataset.id];
+    const ds = cell.dataset.date;
+    if (h) {
+      const target = h.targetCount || 1;
+      if (target <= 1) {
+        const done = !!h.completions?.[ds];
+        toggleCompletion(h.id, ds, !done).catch(() => showToast("Couldn't save — try again"));
+      } else {
+        openCountSheet(h.id, ds);
+      }
+    }
+    return;
+  }
+
   const row = e.target.closest(".week-table-row");
   if (row) { openDetail(row.dataset.id); return; }
 
@@ -622,37 +636,43 @@ todayList.addEventListener("click", (e) => {
 });
 
 /* ============================================================
-   Count control sheet — big circular dial for count-based habits,
-   opened by tapping the count pill on a habit's Today card.
+   Count control sheet — big circular dial for count-based habits.
+   Opened by tapping the count pill on a habit's Today card (today
+   only), or a day's cell in the table view (any day in range).
    ============================================================ */
 let countSheetHabitId = null;
+let countSheetDate = null;
 const COUNT_RING_R = 60;
 const COUNT_RING_CIRC = 2 * Math.PI * COUNT_RING_R;
+const fmtShortDate = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 function renderCountSheet() {
   const h = habits[countSheetHabitId];
   if (!h) { closeCountSheet(); return; }
   const target = h.targetCount || 1;
-  const val = h.completions?.[todayStr()];
+  const val = h.completions?.[countSheetDate];
   const count = typeof val === "number" ? val : 0;
   const pct = Math.max(0, Math.min(1, count / target));
+  const dateLabel = countSheetDate === todayStr() ? "" : ` · ${fmtShortDate(parseDate(countSheetDate))}`;
 
   countSheetName.textContent = h.name;
-  countSheetGoal.textContent = `Daily goal: ${target}${h.unit ? " " + h.unit : ""}`;
+  countSheetGoal.textContent = `Daily goal: ${target}${h.unit ? " " + h.unit : ""}${dateLabel}`;
   countSheetValue.textContent = count;
   countSheet.querySelector(".count-sheet").style.setProperty("--c", h.color);
   countRingFill.style.strokeDashoffset = COUNT_RING_CIRC * (1 - pct);
   countSheetDec.disabled = count <= 0;
 }
 
-function openCountSheet(id) {
+function openCountSheet(id, dateStr = todayStr()) {
   countSheetHabitId = id;
+  countSheetDate = dateStr;
   renderCountSheet();
   countSheet.hidden = false;
 }
 function closeCountSheet() {
   countSheet.hidden = true;
   countSheetHabitId = null;
+  countSheetDate = null;
 }
 countSheetClose.addEventListener("click", closeCountSheet);
 countSheet.addEventListener("click", (e) => { if (e.target === countSheet) closeCountSheet(); });
@@ -665,11 +685,11 @@ countSheetStats.addEventListener("click", () => {
 async function adjustSheetCount(delta) {
   const h = habits[countSheetHabitId];
   if (!h) return;
-  const val = h.completions?.[todayStr()];
+  const val = h.completions?.[countSheetDate];
   const current = typeof val === "number" ? val : 0;
   const next = Math.max(0, Math.min(99, current + delta));
   try {
-    await setCompletionCount(countSheetHabitId, todayStr(), next);
+    await setCompletionCount(countSheetHabitId, countSheetDate, next);
   } catch {
     showToast("Couldn't save — try again");
   }
@@ -679,7 +699,7 @@ countSheetInc.addEventListener("click", () => adjustSheetCount(1));
 countSheetReset.addEventListener("click", async () => {
   if (!countSheetHabitId) return;
   try {
-    await setCompletionCount(countSheetHabitId, todayStr(), 0);
+    await setCompletionCount(countSheetHabitId, countSheetDate, 0);
   } catch {
     showToast("Couldn't save — try again");
   }
@@ -688,7 +708,7 @@ countSheetComplete.addEventListener("click", async () => {
   const h = habits[countSheetHabitId];
   if (!h) return;
   try {
-    await setCompletionCount(countSheetHabitId, todayStr(), h.targetCount || 1);
+    await setCompletionCount(countSheetHabitId, countSheetDate, h.targetCount || 1);
     showToast("Marked complete");
   } catch {
     showToast("Couldn't save — try again");

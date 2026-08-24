@@ -353,10 +353,13 @@ textarea { resize: vertical; font-family: inherit; }
 .week-table-habit { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .week-table-habit .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
 .week-table-habit span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; font-weight: 600; flex: 1; min-width: 0; }
-.week-table-cell { width: 22px; height: 22px; border-radius: 6px; background: var(--surface-3); margin: 0 auto; }
+.week-table-cell {
+  width: 22px; height: 22px; border-radius: 6px; background: var(--surface-3); margin: 0 auto;
+  cursor: pointer; transition: transform .1s, background .15s;
+}
+.week-table-cell:active { transform: scale(0.85); }
 .week-table-cell.done { background: var(--c); }
 .week-table-cell.partial { opacity: .5; }
-.week-table-cell.future { background: transparent; }
 
 /* ============================================================ Empty state ============================================================ */
 .empty-state { text-align: center; padding: 60px 20px; }
