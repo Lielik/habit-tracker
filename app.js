@@ -443,19 +443,26 @@ function renderActiveView() {
 }
 
 /* ============================================================
-   Mini heatmap (habit card) — last 6 calendar weeks, Sun–Sat rows
+   Yearly heatmap (habit card, list view) — GitHub-style grid:
+   7 rows (Sun–Sat), one column per week, for the current year.
    ============================================================ */
-function miniGridHTML(h, weeks = 6) {
+function yearGridHTML(h) {
   const target = h.targetCount || 1;
   const completions = h.completions || {};
-  const gridStart = addDays(startOfWeek(new Date()), -7 * (weeks - 1));
-  const endOfToday = new Date(); endOfToday.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const year = now.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const dec31 = new Date(year, 11, 31);
+  const gridStart = addDays(jan1, -jan1.getDay()); // back up to the preceding Sunday
+  const totalDays = Math.round((dec31 - gridStart) / 86400000) + 1;
+  const weeks = Math.ceil(totalDays / 7);
   let cells = "";
   for (let i = 0; i < weeks * 7; i++) {
     const d = addDays(gridStart, i);
+    if (d.getFullYear() !== year) { cells += `<div class="cell future"></div>`; continue; }
     const ds = fmtDate(d);
     const val = completions[ds];
-    const future = d > endOfToday;
+    const future = d > now;
     const cls = [
       isFull(val, target) ? "done" : "",
       isPartial(val, target) ? "done partial" : "",
@@ -492,7 +499,8 @@ function cardHTML(h) {
         <div class="habit-card-name"><span class="dot"></span><span class="label">${escapeHtml(h.name)}</span></div>
         <span class="habit-card-goal">${wk}/${h.weeklyGoal} this wk</span>
       </div>
-      <div class="mini-grid">${miniGridHTML(h)}</div>
+      <p class="muted heatmap-label">${new Date().getFullYear()}</p>
+      <div class="mini-grid mini-grid--year">${yearGridHTML(h)}</div>
       <div class="habit-card-top" style="margin-bottom:0;">
         <div class="habit-card-stats">
           <span class="stat"><b>${totalCompleted(h.completions || {})}</b> done</span>
@@ -538,7 +546,7 @@ function gridCardHTML(h) {
         <div class="habit-card-name"><span class="dot"></span><span class="label">${escapeHtml(h.name)}</span></div>
         ${controlHTML(h)}
       </div>
-      <p class="muted habit-grid-month">${monthLabel(new Date())}</p>
+      <p class="muted heatmap-label">${monthLabel(new Date())}</p>
       <div class="mini-grid mini-grid--sm">${currentMonthGridHTML(h)}</div>
     </div>`;
 }
@@ -621,6 +629,12 @@ function renderToday() {
   if (todo.length) html += `<h2 class="list-heading">To do</h2><div class="${listClass}">${todo.map(cardFn).join("")}</div>`;
   if (done.length) html += `<h2 class="list-heading">Done today</h2><div class="${listClass}">${done.map(cardFn).join("")}</div>`;
   todayList.innerHTML = html;
+
+  // List view's year heatmap scrolls horizontally — default to showing the
+  // most recent weeks (today) rather than starting back in January.
+  if (todayViewMode === "list") {
+    todayList.querySelectorAll(".mini-grid--year").forEach((el) => { el.scrollLeft = el.scrollWidth; });
+  }
 }
 
 todayList.addEventListener("click", (e) => {
