@@ -264,6 +264,15 @@ textarea { resize: vertical; font-family: inherit; }
 }
 .list-heading:first-child { margin-top: 0; }
 
+/* ============================================================ View switcher (grid / list / table) ============================================================ */
+.view-switcher { display: inline-flex; gap: 4px; background: var(--surface-2); border-radius: 999px; padding: 4px; margin-bottom: 18px; }
+.view-switch-btn {
+  width: 38px; height: 34px; border-radius: 999px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); cursor: pointer; transition: background .15s, color .15s;
+}
+.view-switch-btn.active { background: var(--surface-3); color: var(--text-primary); }
+
 /* ============================================================ Habit cards ============================================================ */
 .habit-list { display: flex; flex-direction: column; gap: 14px; }
 
@@ -274,7 +283,7 @@ textarea { resize: vertical; font-family: inherit; }
   border: 1px solid var(--border);
 }
 .habit-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; cursor: pointer; }
-.habit-card-name { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; font-weight: 600; min-width: 0; }
+.habit-card-name { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; font-weight: 600; min-width: 0; flex: 1; }
 .habit-card-name .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
 .habit-card-name span.label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .habit-card-goal { font-size: 0.78rem; color: var(--text-muted); background: var(--surface-2); padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
@@ -314,6 +323,40 @@ textarea { resize: vertical; font-family: inherit; }
 .habit-card-stats .stat b { color: var(--text-primary); font-weight: 600; }
 
 .habit-list--compact .habit-card { padding: 14px 16px; }
+
+/* ============================================================ Grid view ============================================================ */
+.habit-list--grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.habit-card--grid { padding: 12px; min-width: 0; }
+.habit-card--grid .habit-card-name .label { font-size: 0.88rem; }
+.habit-card--grid .check-btn { width: 32px; height: 32px; }
+.habit-card--grid .count-pill { padding: 5px 9px; font-size: 0.8rem; }
+.mini-grid--sm { grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 0; }
+.mini-grid--sm .cell { border-radius: 2px; }
+
+/* ============================================================ Table (week) view ============================================================ */
+.week-table-meta {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.week-table { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+.week-table-header, .week-table-row {
+  display: grid; grid-template-columns: minmax(0,1fr) repeat(7, 30px);
+  align-items: center; gap: 4px; padding: 12px 14px;
+}
+.week-table-header { border-bottom: 1px solid var(--border); }
+.week-table-row { border-bottom: 1px solid var(--border); cursor: pointer; }
+.week-table-row:last-child { border-bottom: none; }
+.week-table-daylabel { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.6rem; color: var(--text-muted); }
+.week-table-daylabel span:last-child { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); }
+.week-table-daylabel.today span:last-child { color: var(--text-primary); }
+.week-table-habit { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.week-table-habit .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.week-table-habit span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.88rem; font-weight: 600; flex: 1; min-width: 0; }
+.week-table-cell { width: 22px; height: 22px; border-radius: 6px; background: var(--surface-3); margin: 0 auto; }
+.week-table-cell.done { background: var(--c); }
+.week-table-cell.partial { opacity: .5; }
+.week-table-cell.future { background: transparent; }
 
 /* ============================================================ Empty state ============================================================ */
 .empty-state { text-align: center; padding: 60px 20px; }

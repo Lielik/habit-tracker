@@ -79,6 +79,21 @@ function applyTheme(id, { persist = true, sync = true } = {}) {
 }
 
 /* ============================================================
+   Today habit-list layout — grid / list / table, switchable and
+   synced across devices the same way the theme is.
+   ============================================================ */
+function setViewMode(mode, { persist = true, sync = true } = {}) {
+  if (!VIEW_MODES.includes(mode)) mode = "table";
+  todayViewMode = mode;
+  if (persist) { try { localStorage.setItem("habitViewMode", mode); } catch (e) {} }
+  if (sync && currentUser) {
+    setDoc(doc(db, "users", currentUser.uid), { viewMode: mode }, { merge: true }).catch(() => {});
+  }
+  viewSwitchBtns.forEach((b) => b.classList.toggle("active", b.dataset.view === mode));
+  if (currentTab === "today") renderToday();
+}
+
+/* ============================================================
    Date helpers — Sunday-start weeks
    ============================================================ */
 const pad = (n) => String(n).padStart(2, "0");
@@ -88,6 +103,7 @@ const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); r
 const startOfWeek = (d) => addDays(d, -d.getDay()); // Sunday = 0
 const todayStr = () => fmtDate(new Date());
 const monthLabel = (d) => d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+const fmtDayMonth = (d) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase();
 const dayLetters = ["S", "M", "T", "W", "T", "F", "S"];
 
 /* ============================================================
@@ -155,6 +171,8 @@ let modalGoal = 7;
 let modalCountOn = false;
 let modalTarget = 3;
 let authMode = "login";    // "login" | "signup"
+const VIEW_MODES = ["grid", "list", "table"];
+let todayViewMode = "table"; // default per user preference — refined further down once localStorage is checked
 
 /* ============================================================
    DOM refs
@@ -179,6 +197,7 @@ const todayList = $("#today-list");
 const todayEmpty = $("#today-empty");
 const greeting = $("#greeting");
 const todaySubline = $("#today-subline");
+const viewSwitchBtns = document.querySelectorAll(".view-switch-btn");
 
 const statsOverview = $("#stats-overview");
 const statsHabitList = $("#stats-habit-list");
@@ -307,14 +326,16 @@ function setGreeting() {
 async function syncThemeFromCloud(uid) {
   try {
     const snap = await getDoc(doc(db, "users", uid));
-    const remoteTheme = snap.exists() ? snap.data().theme : null;
-    if (remoteTheme && remoteTheme !== currentTheme) {
-      applyTheme(remoteTheme, { sync: false });
-    } else if (!remoteTheme) {
-      await setDoc(doc(db, "users", uid), { theme: currentTheme }, { merge: true });
+    const data = snap.exists() ? snap.data() : null;
+    const remoteTheme = data?.theme;
+    const remoteViewMode = data?.viewMode;
+    if (remoteTheme && remoteTheme !== currentTheme) applyTheme(remoteTheme, { sync: false });
+    if (remoteViewMode && remoteViewMode !== todayViewMode) setViewMode(remoteViewMode, { sync: false });
+    if (!remoteTheme || !remoteViewMode) {
+      await setDoc(doc(db, "users", uid), { theme: currentTheme, viewMode: todayViewMode }, { merge: true });
     }
   } catch (e) {
-    // offline or first run — local theme still applies, will sync once online
+    // offline or first run — local settings still apply, will sync once online
   }
 }
 
@@ -382,6 +403,10 @@ async function removeHabit(id) {
 /* ============================================================
    Tab / view navigation
    ============================================================ */
+viewSwitchBtns.forEach((btn) => {
+  btn.addEventListener("click", () => setViewMode(btn.dataset.view));
+});
+
 document.querySelectorAll(".tab-btn").forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
 });
@@ -420,8 +445,7 @@ function renderActiveView() {
 /* ============================================================
    Mini heatmap (habit card) — last 6 calendar weeks, Sun–Sat rows
    ============================================================ */
-function miniGridHTML(h) {
-  const weeks = 6;
+function miniGridHTML(h, weeks = 6) {
   const target = h.targetCount || 1;
   const completions = h.completions || {};
   const gridStart = addDays(startOfWeek(new Date()), -7 * (weeks - 1));
@@ -480,7 +504,74 @@ function cardHTML(h) {
 }
 
 /* ============================================================
-   Today view — split into "To do" and "Done today"
+   Grid view — compact 2-column card, name + control up top,
+   a shorter 4-week heatmap below.
+   ============================================================ */
+function gridCardHTML(h) {
+  return `
+    <div class="habit-card habit-card--grid" style="--c:${h.color}" data-id="${h.id}">
+      <div class="habit-card-top" style="margin-bottom:10px;">
+        <div class="habit-card-name"><span class="dot"></span><span class="label">${escapeHtml(h.name)}</span></div>
+        ${controlHTML(h)}
+      </div>
+      <div class="mini-grid mini-grid--sm">${miniGridHTML(h, 4)}</div>
+    </div>`;
+}
+
+/* ============================================================
+   Table view — habits as rows, the current Sun–Sat week as
+   columns. Read-only: tapping a row opens that habit's detail.
+   ============================================================ */
+function weekTableHTML(list) {
+  const weekStart = startOfWeek(new Date());
+  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const todayDs = todayStr();
+  const now = new Date();
+  const rangeLabel = `${fmtDayMonth(days[0])} – ${fmtDayMonth(days[6])}`;
+
+  const headerCells = days.map((d) => {
+    const isToday = fmtDate(d) === todayDs;
+    return `<div class="week-table-daylabel${isToday ? " today" : ""}"><span>${dayLetters[d.getDay()]}</span><span>${d.getDate()}</span></div>`;
+  }).join("");
+
+  const rows = list.map((h) => {
+    const target = h.targetCount || 1;
+    const completions = h.completions || {};
+    const cells = days.map((d) => {
+      const ds = fmtDate(d);
+      const val = completions[ds];
+      const future = d > now;
+      const cls = [
+        isFull(val, target) ? "done" : "",
+        isPartial(val, target) ? "done partial" : "",
+        future ? "future" : "",
+      ].filter(Boolean).join(" ");
+      return `<div class="week-table-cell${cls ? " " + cls : ""}" style="--c:${h.color}"></div>`;
+    }).join("");
+    return `
+      <div class="week-table-row" data-id="${h.id}">
+        <div class="week-table-habit"><span class="dot" style="--c:${h.color}"></span><span>${escapeHtml(h.name)}</span></div>
+        ${cells}
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="week-table-meta">
+      <span>${list.length} habit${list.length === 1 ? "" : "s"}</span>
+      <span>${rangeLabel}</span>
+    </div>
+    <div class="week-table">
+      <div class="week-table-header">
+        <div></div>
+        ${headerCells}
+      </div>
+      <div class="week-table-body">${rows || `<div class="empty-state"><p>No habits yet.</p><p class="muted">Tap the + button to add your first habit.</p></div>`}</div>
+    </div>`;
+}
+
+/* ============================================================
+   Today view — grid / list / table, switchable via todayViewMode.
+   Grid and list still split into "To do" and "Done today".
    ============================================================ */
 function renderToday() {
   setGreeting();
@@ -494,15 +585,25 @@ function renderToday() {
       ? `All habits done for today ${ICON_SPARKLE}`
       : `You have ${todo.length} habit${todo.length === 1 ? "" : "s"} left today`;
 
-  todayEmpty.hidden = list.length !== 0;
+  todayEmpty.hidden = list.length !== 0 || todayViewMode === "table";
 
+  if (todayViewMode === "table") {
+    todayList.innerHTML = weekTableHTML(list);
+    return;
+  }
+
+  const cardFn = todayViewMode === "grid" ? gridCardHTML : cardHTML;
+  const listClass = todayViewMode === "grid" ? "habit-list habit-list--grid" : "habit-list";
   let html = "";
-  if (todo.length) html += `<h2 class="list-heading">To do</h2><div class="habit-list">${todo.map(cardHTML).join("")}</div>`;
-  if (done.length) html += `<h2 class="list-heading">Done today</h2><div class="habit-list">${done.map(cardHTML).join("")}</div>`;
+  if (todo.length) html += `<h2 class="list-heading">To do</h2><div class="${listClass}">${todo.map(cardFn).join("")}</div>`;
+  if (done.length) html += `<h2 class="list-heading">Done today</h2><div class="${listClass}">${done.map(cardFn).join("")}</div>`;
   todayList.innerHTML = html;
 }
 
 todayList.addEventListener("click", (e) => {
+  const row = e.target.closest(".week-table-row");
+  if (row) { openDetail(row.dataset.id); return; }
+
   const card = e.target.closest(".habit-card");
   if (!card) return;
   const id = card.dataset.id;
@@ -923,6 +1024,11 @@ function escapeHtml(str) {
   let saved = DEFAULT_THEME;
   try { saved = localStorage.getItem("habitTheme") || DEFAULT_THEME; } catch (e) {}
   applyTheme(saved, { sync: false });
+})();
+(function initViewMode() {
+  let saved = "table";
+  try { saved = localStorage.getItem("habitViewMode") || "table"; } catch (e) {}
+  setViewMode(saved, { sync: false });
 })();
 
 /* ============================================================
