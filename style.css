@@ -330,6 +330,7 @@ textarea { resize: vertical; font-family: inherit; }
 .habit-card--grid .habit-card-name .label { font-size: 0.88rem; }
 .habit-card--grid .check-btn { width: 32px; height: 32px; }
 .habit-card--grid .count-pill { padding: 5px 9px; font-size: 0.8rem; }
+.habit-grid-month { font-size: 0.7rem; margin-bottom: 8px; }
 .mini-grid--sm { grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 0; }
 .mini-grid--sm .cell { border-radius: 2px; }
 

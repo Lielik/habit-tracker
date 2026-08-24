@@ -505,8 +505,32 @@ function cardHTML(h) {
 
 /* ============================================================
    Grid view — compact 2-column card, name + control up top,
-   a shorter 4-week heatmap below.
+   the current calendar month's heatmap below (e.g. "Aug 2026").
    ============================================================ */
+function currentMonthGridHTML(h) {
+  const target = h.targetCount || 1;
+  const completions = h.completions || {};
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const leadEmpty = first.getDay(); // Sunday-first offset
+  let cells = "";
+  for (let i = 0; i < leadEmpty; i++) cells += `<div class="cell future"></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), day);
+    const ds = fmtDate(d);
+    const val = completions[ds];
+    const future = d > now;
+    const cls = [
+      isFull(val, target) ? "done" : "",
+      isPartial(val, target) ? "done partial" : "",
+      future ? "future" : "",
+    ].filter(Boolean).join(" ");
+    cells += `<div class="cell${cls ? " " + cls : ""}"></div>`;
+  }
+  return cells;
+}
+
 function gridCardHTML(h) {
   return `
     <div class="habit-card habit-card--grid" style="--c:${h.color}" data-id="${h.id}">
@@ -514,7 +538,8 @@ function gridCardHTML(h) {
         <div class="habit-card-name"><span class="dot"></span><span class="label">${escapeHtml(h.name)}</span></div>
         ${controlHTML(h)}
       </div>
-      <div class="mini-grid mini-grid--sm">${miniGridHTML(h, 4)}</div>
+      <p class="muted habit-grid-month">${monthLabel(new Date())}</p>
+      <div class="mini-grid mini-grid--sm">${currentMonthGridHTML(h)}</div>
     </div>`;
 }
 
